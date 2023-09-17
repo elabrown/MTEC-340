@@ -1,2 +1,2 @@
 # MTEC-340
-Repository for MTEC-340: Programming With Unity
+_Repository for MTEC-340: Programming With Unity. The Repo will contain my classwork and homework for MTEC-340, along with all associated materials._
