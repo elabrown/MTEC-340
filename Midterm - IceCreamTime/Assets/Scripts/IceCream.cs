@@ -7,22 +7,21 @@ public class IceCream : MonoBehaviour
     [SerializeField] private Rigidbody2D rb;
     [SerializeField] private Collider2D col;
 
-    private SpriteRenderer spriteRender;
-
+    private SpriteRenderer spriteRenderer;
     public bool isLanded = false;
+    public IceCream scoopAbove; // The scoop directly above this one
+    public IceCream scoopBelow; // The scoop directly below this one
 
     private GameManager gameManager;
-
+    public AudioSource audioSource;
 
     private void Awake()
     {
-        // Get components from the object
         rb = GetComponent<Rigidbody2D>();
         col = GetComponent<Collider2D>();
-        spriteRender = GetComponent<SpriteRenderer>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
         gameManager = FindObjectOfType<GameManager>();
-
-        // Null checks and initial setup
+        
         InitializeComponents();
     }
 
@@ -39,51 +38,69 @@ public class IceCream : MonoBehaviour
             col.isTrigger = true;
         }
 
-        if (spriteRender != null)
+        if (spriteRenderer != null)
         {
-            spriteRender.color = Random.ColorHSV();
+            AssignRandomSprite();
         }
     }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
+        audioSource.Play();
         if (IsLayerMatch(other, "Player"))
         {
             Debug.Log("Triggered by Player");
-            StartFalling();
+            PlayerCollision();
             gameManager.IncreaseScore();
         }
-        else if (IsLayerMatch(other, "Pallet"))
+        else if (IsLayerMatch(other, "Cone"))
         {
-            Debug.Log("Landed on Pallet");
-            StopFalling();
+            Debug.Log("Landed on Cone");
+            Land(null); // No ice cream on top of a cone
         }
         else if (IsLayerMatch(other, "Ice Cream"))
         {
-            HandleIceCreamCollision(other);
+            IceCream otherIceCream = other.GetComponent<IceCream>();
+            if (otherIceCream != null && otherIceCream.isLanded)
+            {
+                Debug.Log("Landed on Ice Cream");
+                Land(otherIceCream);
+            }
         }
     }
 
-    private void HandleIceCreamCollision(Collider2D other)
+    public void Land(IceCream onTopOf)
     {
-        IceCream aboveIceCream = other.gameObject.GetComponent<IceCream>();
+        isLanded = true;
+        StopFalling();
 
-        if (aboveIceCream != null)
+        if (onTopOf != null)
         {
-            if (!aboveIceCream.isLanded)
-            {
-                aboveIceCream.StartFalling();
-            }
-            else
-            {
-                StopFalling();
-            }
+            scoopBelow = onTopOf;
+            onTopOf.scoopAbove = this;
+        }
+    }
+
+    public void PlayerCollision()
+    {
+        if (!isLanded && scoopBelow == null)
+        {
+            PropagateFall();
+        }
+    }
+
+    public void PropagateFall()
+    {
+        StartFalling();
+        if (scoopAbove != null)
+        {
+            scoopAbove.PropagateFall();
         }
     }
 
     private bool IsLayerMatch(Collider2D other, string layerName)
     {
-        return other.gameObject != null && other.gameObject.layer == LayerMask.NameToLayer(layerName);
+        return other.gameObject.layer == LayerMask.NameToLayer(layerName);
     }
 
     public void StartFalling()
@@ -98,11 +115,25 @@ public class IceCream : MonoBehaviour
 
     public void StopFalling()
     {
-        isLanded = true;
         if (rb != null)
         {
             rb.bodyType = RigidbodyType2D.Static;
             rb.gravityScale = 0;
+        }
+    }
+
+    void AssignRandomSprite()
+    {
+        Sprite[] sprites = Resources.LoadAll<Sprite>("IceCreamSprites");
+
+        if (sprites.Length > 0)
+        {
+            int randomIndex = Random.Range(0, sprites.Length);
+            spriteRenderer.sprite = sprites[randomIndex];
+        }
+        else
+        {
+            Debug.LogError("No sprites found in 'IceCreamSprites' folder!");
         }
     }
 }

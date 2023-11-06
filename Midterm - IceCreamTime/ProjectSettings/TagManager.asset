@@ -6,6 +6,10 @@ TagManager:
   tags:
   - Ladder
   - Ice Cream
+  - LivesText
+  - Obstacle
+  - ScoreText
+  - PauseText
   layers:
   - Default
   - TransparentFX
@@ -16,7 +20,7 @@ TagManager:
   - Ladder
   - Ground
   - Player
-  - Pallet
+  - Cone
   - Ice Cream
   - Projectiles
   - 

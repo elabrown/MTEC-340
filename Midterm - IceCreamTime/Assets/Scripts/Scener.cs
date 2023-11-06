@@ -1,63 +1,74 @@
 using System.Collections;
-using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class Scener : MonoBehaviour
 {
     public static Scener Instance;
-
-    public string level = "Level1";
-    public int lives = 3;
+    [SerializeField] private TextMeshProUGUI _livesGui;
+    private int _lives = 3;
+    public int Lives
+    {
+        get => _lives;
+        set => _lives = value;
+    }
 
     private void Awake()
     {
-        // Singleton pattern
         if (Instance != null && Instance != this)
         {
-            Destroy(this.gameObject);
-            return; // Ensure that the rest of the Awake method doesn't run for this duplicate
+            Destroy(gameObject);
+            return;
         }
 
         Instance = this;
         DontDestroyOnLoad(this.gameObject);
     }
 
-    // Start is called before the first frame update
-    void Start()
-    {
-        LoadScene("MenuScreen");
-    }
-
     public void LoadLevel1()
     {
+        Lives = 3;
         Debug.Log("Loading First Level");
         LoadScene("Level1");
     }
 
-    public void NewGame()
+    public void GameOver()
     {
-        lives = 3;
-        LoadScene("MenuScreen");
+        Debug.Log("Game Over");
+        LoadScene("GameOver");
     }
+    public void GameWon()
+    {
+        Debug.Log("Game Won!");
+        LoadScene("GameWon");
+    }
+    public void AssignLivesText()
+    {
+        _livesGui = GameObject.FindWithTag("LivesText")?.GetComponent<TextMeshProUGUI>();
 
+        // Update the text immediately with the current lives if the component is found
+        if (_livesGui != null)
+        {
+            _livesGui.text = Lives.ToString();
+        }
+        else
+        {
+            Debug.LogError("LivesText object with TextMeshProUGUI component not found after scene load.");
+        }
+    }   
     private IEnumerator LoadSceneCoroutine(string sceneName)
     {
         Scene currentScene = SceneManager.GetActiveScene();
-
-        // Load the new scene
         AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
 
-        // Wait for the scene to finish loading
         while (!asyncLoad.isDone)
         {
             yield return null;
         }
 
-        // Set the new scene as active
         SceneManager.SetActiveScene(SceneManager.GetSceneByName(sceneName));
 
-        // Unload the previous scene only if more than one scene is loaded
         if (SceneManager.sceneCount > 1)
         {
             yield return SceneManager.UnloadSceneAsync(currentScene);

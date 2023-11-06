@@ -12,18 +12,18 @@ public class MovementScript : MonoBehaviour
 
     private bool grounded;
     private bool onladder;
-
-    public float moveSpeed = 3f;
-
+    private SpriteRenderer spriteRenderer;
+    public float moveSpeed = 5f;
+    public bool powerup = false;
     private int groundLayer;
     private int ladderLayer;
-
     private GameManager gameManager;
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         col = GetComponent<Collider2D>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
 
         // Cache the layer indices
         groundLayer = LayerMask.NameToLayer("Ground");
@@ -116,12 +116,44 @@ public class MovementScript : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        
-        
-        //else if (collision.gameObject.CompareTag("Obstacle"))
-        //{
-        //    this.enabled = false;
-        //    gameManager.LevelFailed();
-        //}
+        if (collision.gameObject.CompareTag("Obstacle") && powerup == false)
+        {
+            this.enabled = false;
+            gameManager.LevelFailed();
+        }
+    }
+    public void ActivatePowerup()
+    {
+        powerup = true;
+        StartCoroutine(powerupcountdown());
+    }
+
+    public void SpeedPowerup()
+    {
+        moveSpeed = 7f;
+        StartCoroutine(powerupcountdown());
+    }
+    public IEnumerator powerupcountdown()
+    {
+        Color originalColor = spriteRenderer.color;
+
+        float endTime = Time.time + 6f;
+
+        while (Time.time < endTime)
+        {
+            spriteRenderer.color = new Color(originalColor.r, originalColor.g, originalColor.b, 0f); 
+            yield return new WaitForSeconds(0.1f);
+            spriteRenderer.color = originalColor; 
+            yield return new WaitForSeconds(0.1f);
+        }
+
+        spriteRenderer.color = originalColor;
+        moveSpeed = 5f;
+        powerup = false;
+    }
+
+    private void OnBecameInvisible()
+    {
+        gameManager.LevelFailed();
     }
 }

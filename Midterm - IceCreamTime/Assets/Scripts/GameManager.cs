@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -7,34 +6,32 @@ using UnityEngine.SceneManagement;
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
+
     public GameObject projectilePrefab;
     public Scener _scener;
+    private bool isGamePaused = false;
+    public GameObject pausetext;
     private int _score;
-
     public int Score
     {
-        get
-        {
-            return _score;
-        }
+        get => _score;
         set
         {
             _score = value;
             _scoreGui.text = _score.ToString();
         }
     }
-
-    [SerializeField] TextMeshProUGUI _scoreGui;
+    [SerializeField] private TextMeshProUGUI _scoreGui;
 
     private void Awake()
     {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(this.gameObject);
-        }
-        else
+        if (Instance == null)
         {
             Instance = this;
+        }
+        else if (Instance != this)
+        {
+            Destroy(gameObject);
         }
 
         _scener = FindObjectOfType<Scener>();
@@ -42,18 +39,39 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        DontDestroyOnLoad(this.gameObject);
         StartCoroutine(SpawnProjectileRoutine());
     }
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            TogglePause();
+        }
+    }
 
+    private void TogglePause()
+    {
+        isGamePaused = !isGamePaused;
 
+        if (isGamePaused)
+        {
+            Time.timeScale = 0f;
+            pausetext.SetActive(true);        
+        }
+        else
+        {
+            Time.timeScale = 1f;
+            pausetext.SetActive(false);
+        }
+    }
     public void LevelFailed()
     {
-        _scener.lives--;
+        _scener.Lives--;
 
-        if (_scener.lives <= 0)
+        if (_scener.Lives <= 0)
         {
-            _scener.NewGame();
+            StopCoroutine(SpawnProjectileRoutine());
+            _scener.GameOver();
         }
         else
         {
@@ -61,37 +79,32 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    private void Update()
-    {
-        if (Score > 800)
-        {
-            SceneManager.LoadScene("You Won!");
-        }
-    }
-
     public void IncreaseScore()
     {
         Score += 100;
+        if (Score >= 1000)
+        {
+            StopCoroutine(SpawnProjectileRoutine());
+            _scener.GameWon();
+        }
     }
 
     private IEnumerator SpawnProjectileRoutine()
     {
-        while (true) // This will keep the routine running indefinitely
+        while (true)
         {
-            Debug.Log("called");
+            Debug.Log("SpawnProjectile called");
             SpawnRandomProjectile();
-            yield return new WaitForSeconds(3f); // Wait for 3 seconds before the next call
+            yield return new WaitForSeconds(3f);
         }
     }
 
     public void SpawnRandomProjectile()
     {
         float randomY = Random.Range(-3f, 4f);
-
-        float spawnX = (Random.value < 0.5f) ? -7f : 7f;
-
+        float spawnX = Random.value < 0.5f ? -7f : 7f;
         Vector2 spawnPosition = new Vector2(spawnX, randomY);
 
-        GameObject spawnedProjectile = Instantiate(projectilePrefab, spawnPosition, Quaternion.identity);
+        Instantiate(projectilePrefab, spawnPosition, Quaternion.identity);
     }
 }

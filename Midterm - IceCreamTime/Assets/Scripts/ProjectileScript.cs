@@ -8,17 +8,23 @@ public class ProjectileScript : MonoBehaviour
     private Vector2 direction;
     private GameManager gameManager;
     private Collider2D col;
+    public AudioSource audioSource;
+    public AudioClip projectilesound;
 
     // Start is called before the first frame update
     void Start()
     {
         gameManager = FindObjectOfType<GameManager>();
+        audioSource = FindObjectOfType<AudioSource>().GetComponent<AudioSource>();
         col = GetComponent<Collider2D>();
 
         //if the projectile is spawned on the left, it moves right, and
         // vice versa
         if (transform.position.x < 0) { direction = Vector2.right; }
         else if (transform.position.x > 0) { direction = Vector2.left; }
+
+        audioSource.clip = projectilesound;
+        audioSource.Play();
     }
 
     private void Update()
@@ -37,13 +43,5 @@ public class ProjectileScript : MonoBehaviour
     {
         // Destroy the projectile once it's off-screen
         Destroy(gameObject);
-    }
-
-    private void OnTriggerEnter2D(Collider2D other)
-    {
-        if (other.gameObject != null && other.gameObject.layer == LayerMask.NameToLayer("Player"))
-        {
-            gameManager.LevelFailed();
-        }
     }
 }
